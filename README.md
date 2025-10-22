@@ -54,18 +54,17 @@ graph LR
 - Modern web browser
 
 ## Project Structure
-
+**in The interface branch : ** 
 ```
 logs-server/
 ├── src/                    # Next.js frontend source
 ├── public/                 # Static assets
 │   └── screenshot.png      # Dashboard screenshot
-├── server_configuration/   # Server config files
-│   ├── logs_server.service # Systemd service file
-│   ├── main.py             # FastAPI server
-│   └── rsyslog.conf        # rsyslog configuration
 └── README.md               # This documentation
 ```
+**in The Api branch : ** 
+|- back_Log.py 
+
 
 ## Installation
 
