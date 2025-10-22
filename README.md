@@ -54,7 +54,7 @@ graph LR
 - Modern web browser
 
 ## Project Structure
-**in The interface branch : ** 
+# in The interface branch :  
 ```
 logs-server/
 ├── src/                    # Next.js frontend source
@@ -62,9 +62,10 @@ logs-server/
 │   └── screenshot.png      # Dashboard screenshot
 └── README.md               # This documentation
 ```
-**in The Api branch : ** 
+# in The Api branch :  
+```
 |- back_Log.py 
-
+```
 
 ## Installation
 
