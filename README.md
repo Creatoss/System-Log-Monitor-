@@ -1,73 +1,283 @@
-# Welcome to your Lovable project
+# Centralized Log Monitoring System
 
-## Project info
+![Dashboard Preview](https://github.com/NidhalChelhi/logs-server/blob/main/public/screenshot.png)
 
-**URL**: https://lovable.dev/projects/0f9c8bac-69a9-441b-91ac-eb90a2efccd4
+## Overview
 
-## How can I edit this code?
+This project provides a centralized log monitoring solution that collects logs from multiple Linux machines (clients) to a central RHEL server, then visualizes them in a real-time Next.js web dashboard. The system consists of three main components:
 
-There are several ways of editing your application.
+1. **Log Server (RHEL)**: Receives and stores logs from multiple clients
+2. **Clients (Ubuntu, Rocky Linux, Kali)**: Send system logs to the server
+3. **Web Dashboard (Next.js)**: Displays logs in real-time with filtering and statistics
 
-**Use Lovable**
+## Architecture
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0f9c8bac-69a9-441b-91ac-eb90a2efccd4) and start prompting.
+```mermaid
+graph LR
+    A[Client Machines] -->|rsyslog TCP/UDP 514| B[Central Log Server]
+    B -->|FastAPI + SSE| C[Web Dashboard]
+    A1[Ubuntu] --> B
+    A2[Rocky Linux] --> B
+    A3[Kali Linux] --> B
+```
 
-Changes made via Lovable will be committed automatically to this repo.
+## Features
 
-**Use your preferred IDE**
+- 📊 Real-time log streaming from multiple hosts
+- 🔍 Automatic severity classification (error, warning, info, debug)
+- 🖥️ Host-based filtering
+- 🔎 Full-text search across log messages
+- 📈 Comprehensive statistics dashboard
+- 📱 Fully responsive design
+- 💾 Persistent log storage in `/var/log/remote`
+- ⚙️ Systemd service for automatic startup
+- 🔄 Server-Sent Events (SSE) for live updates
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Prerequisites
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Log Server (RHEL)
 
-Follow these steps:
+- RHEL 8/9
+- Python 3.7+
+- rsyslog
+- Firewall access (ports 514/tcp, 514/udp, 8000/tcp)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Client Machines
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- Ubuntu/Rocky/Kali Linux
+- rsyslog installed
+- Network access to log server
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Dashboard Host
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+- Node.js 16+
+- Modern web browser
+
+## Project Structure
+
+```
+logs-server/
+├── src/                    # Next.js frontend source
+├── public/                 # Static assets
+│   └── screenshot.png      # Dashboard screenshot
+├── server_configuration/   # Server config files
+│   ├── logs_server.service # Systemd service file
+│   ├── main.py             # FastAPI server
+│   └── rsyslog.conf        # rsyslog configuration
+└── README.md               # This documentation
+```
+
+## Installation
+
+### 1. Log Server Setup (RHEL)
+
+1. Install required packages:
+
+```bash
+sudo dnf install rsyslog python3-pip -y
+```
+
+2. Configure rsyslog (use the provided `rsyslog.conf` from `server_configuration/`):
+
+```bash
+sudo cp server_configuration/rsyslog.conf /etc/rsyslog.conf
+```
+
+3. Create log directory and set permissions:
+
+```bash
+sudo mkdir -p /var/log/remote
+sudo chmod -R 755 /var/log/remote
+sudo systemctl restart rsyslog
+```
+
+4. Configure firewall:
+
+```bash
+sudo firewall-cmd --permanent --add-port=514/tcp
+sudo firewall-cmd --permanent --add-port=514/udp
+sudo firewall-cmd --permanent --add-port=8000/tcp
+sudo firewall-cmd --reload
+```
+
+5. Install Python dependencies:
+
+```bash
+pip install fastapi uvicorn
+```
+
+6. Set up FastAPI service:
+
+```bash
+sudo mkdir -p /root/logs_server
+sudo cp server_configuration/main.py /root/logs_server/main.py
+```
+
+7. Configure systemd service (use provided `logs_server.service`):
+
+```bash
+sudo cp server_configuration/logs_server.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable logs_server.service
+sudo systemctl start logs_server.service
+```
+
+### 2. Client Machine Setup
+
+For each client machine (Ubuntu/Rocky/Kali):
+
+1. Install rsyslog if needed:
+
+```bash
+# Ubuntu/Debian:
+sudo apt install rsyslog -y
+
+# Rocky/RHEL:
+sudo dnf install rsyslog -y
+```
+
+2. Configure log forwarding (replace `SERVER_IP` with your RHEL server's IP):
+
+```bash
+echo '*.* @@SERVER_IP:514' | sudo tee -a /etc/rsyslog.conf
+sudo systemctl restart rsyslog
+```
+
+### 3. Web Dashboard Setup
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/NidhalChelhi/logs-server.git
+cd logs-server
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Configure environment:
+
+```bash
+echo "NEXT_PUBLIC_LOG_SERVER_URL=http://SERVER_IP:8000" > .env.local
+```
+
+4. Run the development server:
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+For production:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm run build
+npm run start
+```
 
-**Use GitHub Codespaces**
+## Configuration Details
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Server Configuration (`main.py`)
 
-## What technologies are used for this project?
+Key configuration parameters:
 
-This project is built with:
+```python
+LOG_DIR = Path("/var/log/remote")  # Log storage directory
+SERVER_HOSTNAME = "rhel"           # Server's hostname (excluded from logs)
+PORT = 8000                        # FastAPI server port
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### rsyslog Configuration
 
-## How can I deploy this project?
+Main features in `rsyslog.conf`:
 
-Simply open [Lovable](https://lovable.dev/projects/0f9c8bac-69a9-441b-91ac-eb90a2efccd4) and click on Share -> Publish.
+- TCP/UDP reception on port 514
+- Log storage by hostname in `/var/log/remote/%HOSTNAME%.log`
+- Standard system log handling
+- Cron log filtering
 
-## Can I connect a custom domain to my Lovable project?
+### Systemd Service
 
-Yes, you can!
+Key service parameters:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- Runs as root (required for log access)
+- Automatic restarts on failure
+- Security restrictions applied
+- Log directory access permissions
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Usage
+
+1. Access the dashboard at `http://localhost:3000` (or your server's IP if deployed)
+2. Use the interface controls:
+   - **Search**: Filter logs by content
+   - **Host Filter**: Select specific machines
+   - **Severity Filter**: Show only errors, warnings, etc.
+3. View real-time statistics in the dashboard
+
+## Troubleshooting
+
+### Common Issues
+
+**Logs not appearing in dashboard:**
+
+```bash
+# Verify rsyslog is running on clients
+sudo systemctl status rsyslog
+
+# Check server connectivity
+telnet SERVER_IP 514
+
+# Inspect server logs
+sudo tail -f /var/log/remote/*.log
+
+# Check API service status
+sudo journalctl -u logs_server.service -f
+```
+
+**Performance Optimization:**
+
+- Adjust in-memory log limit (`slice(-500)` in frontend code)
+- Increase stats update interval (currently 30s)
+- Limit log age with `minutes` API parameter
+
+## Security Considerations
+
+⚠️ **Important Security Notes:**
+
+1. **Current Limitations**:
+
+   - No authentication implemented
+   - Service runs as root (required for log access)
+   - Plain TCP/UDP used for log transmission
+
+2. **Recommended Enhancements**:
+   - Implement TLS for rsyslog communication
+   - Add Basic Auth or JWT for API access
+   - Configure firewall restrictions
+   - Consider non-root operation with proper permissions
+
+## Roadmap
+
+Planned improvements:
+
+- [ ] Add user authentication
+- [ ] Implement database persistence
+- [ ] Create alerting/notification system
+- [ ] Add log rotation/archiving
+- [ ] Dockerize all components
+- [ ] Implement TLS encryption
+
+## License
+
+MIT License
+
+## Contributors
+
+- [Mohamed Ghaith Hamzaoui](https://github.com/ghaithhamzaoui)
+- [Nidhal Chelhi](https://github.com/nidhalchelhi)
+
+---
+
+For support or contributions, please open an issue on the [GitHub repository](https://github.com/NidhalChelhi/logs-server).
