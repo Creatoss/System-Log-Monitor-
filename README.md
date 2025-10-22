@@ -1,6 +1,6 @@
 # Centralized Log Monitoring System
 
-![Dashboard Preview](https://github.com/Creatoss/System-Log-Monitor-/public/watchlogs.jpg)
+![Dashboard Preview](https://github.com/Creatoss/System-Log-Monitor-/blob/interface/public/watchlogs.jpg)
 
 ## Overview
 
