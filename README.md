@@ -1,6 +1,6 @@
 # Centralized Log Monitoring System
 
-![Dashboard Preview](https://github.com/NidhalChelhi/logs-server/blob/main/public/screenshot.png)
+![Dashboard Preview](https://github.com/Creatoss/System-Log-Monitor-/public/watchlogs.jpg)
 
 ## Overview
 
